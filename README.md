@@ -1,4 +1,29 @@
-[![Build Status](https://travis-ci.org/dvhdr/launchpad-pro.svg?branch=master)](https://travis-ci.org/dvhdr/launchpad-pro)
+# Hi there.
+If you've come from Dave Hodder's Github waving pitchfork and/or torch, I've probably innocently done something quite silly in my complete lack of Git(hub) experience.
+Please do say so (nicely!) and I'll try to correct it and learn!
+
+This repository exists as a place for me to host my own little hackings-abouts on top of the open-source firmware that Dave H put out.
+I'm not particularly expecting anyone else to trawl through whatever atrocities I commit in my first real C foray - though I absolutely welcome the (constructive?) criticism. Tell me what I should be embarrassed about!
+
+There isn't much of a roadmap or goal here, this project primarily exists as a bit of fun and as a vehicle for me to pretend I'm learning C while actually just making blinking lights and horrible noises.
+
+You should absolutely go and check out Dave's repo over on his Github: https://github.com/dvhdr/launchpad-pro as that's the base for anything in here.
+His full readme exists below, at least until I feel sufficiently assured that I've gone about this the right way!
+
+
+
+
+-----
+
+
+
+
+
+
+
+
+
+
 
 # Launchpad Pro
 Open source firmware for the Novation Launchpad Pro grid controller!  By customising this code, you can:
