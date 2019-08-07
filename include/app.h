@@ -232,5 +232,10 @@ void app_surface_event(u8 type, u8 index, u8 value);
  */
 void app_aftertouch_event(u8 index, u8 value);
 
+void drawFill();
+void drawScale();
+void buttons_init();
+
+
 
 #endif
