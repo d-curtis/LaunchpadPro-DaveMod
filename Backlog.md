@@ -6,15 +6,17 @@ These are unlikely to be complete specs, but rather serve as a brain dump of ide
 -----
 
 **CC Config**
+
 Note; MVP is latching 0-127. Consider configuring latch/momentary and value to send on the fly. Perhaps a kind of inverse MIDI learn?
-- [ ] I want to enter a setup mode by pressing the setup button so that I can configure my CCs on the fly
+- [x] I want to enter a setup mode by pressing the setup button so that I can configure my CCs on the fly
 - [ ] I want to select one of the circle "play" buttons on the right hand side when I am in the setup mode so that I can then apply a CC value to it
-- [ ] I want the LEDs under square buttons 11-18, 21-24 to light blue, so that I know these buttons can be interacted with to set the CC number "tens"
-- [ ] I want the LEDs under square buttons 31-38, 41-42 to light purple, so that I know these buttons can be interacted with to set the CC number "units"
+- [x] I want the LEDs under square buttons 11-18, 21-24 to light blue, so that I know these buttons can be interacted with to set the CC number "tens"
+- [x] I want the LEDs under square buttons 31-38, 41-42 to light purple, so that I know these buttons can be interacted with to set the CC number "units"
 - [ ] I want the button selection to intercancel within (tens) or (units), so that it's clear what is being entered
-- [ ] I want the default selection to be 11, 31 (CC #00)
+- [x] I want the default selection to be 11, 31 (CC #00)
 - [ ] I want my CC selection to save to flash when deselected so that I don't have to configure CCs every reboot
 - [ ] I want the square button LEDs to update when selecting a new circle button so I am always viewing the value for the selected button.
+- [ ] I want a numerical display on the spare pixels so I know what number I'm entering using the tens/units system
 
 
 **Note Velocity Scaling**
