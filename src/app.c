@@ -46,13 +46,15 @@ u8 g_Buttons[BUTTON_COUNT] = {0};
 
 
 // Allllll the surface information is going to live in here.
+#define TYPE_NOTE   0
+#define TYPE_CC     1
 typedef struct button button;
 struct button {
-       u8 index;       //  Physical HAL index (1..98)
-       u8 midi;        //  MIDI number
-       u8 colour[3];   //  Colour to display when idle
-    _Bool type;     //  0: Note     1: CC
-       u8 active;   // 0: idle  1: Active   2: Alternate
+       u8 index;        //  Physical HAL index (1..98)
+       u8 midi;         //  MIDI number
+       u8 colour[3];    //  Colour to display when idle
+    _Bool type;         // 0: Note  1: CC
+       u8 active;       // 0: idle  1: Active   2: Alternate 
 };
 
 button board_buttons[BUTTON_COUNT];
@@ -76,93 +78,120 @@ signed char trans_semi  = 0;
 #define MIDI_ASH    22
 #define MIDI_B      23
 
+#define MIDI_CC_ON          127
+#define MIDI_CC_OFF         0
+#define MIDI_CC_SUSTAIN     64
+
+
+// Currently active view (global)
+#define VIEWNOTE    0
+#define VIEWSETUP   1
+// #define some others in future...?
+u8 currentview = 0;
+
+
 
 
 //______________________________________________________________________________
 
 void app_surface_event(u8 type, u8 index, u8 value)
 {
-    switch (type)
+    switch (currentview)
     {
-        case  TYPEPAD:
+        // Main note view
+        case VIEWNOTE:
         {
-            if (board_buttons[index].type == 0) {   // Note
-                if (value)
+            switch (type)
+            {
+                case  TYPEPAD:
                 {
-                    // Send the MIDI data
-                    hal_send_midi(  USBMIDI, NOTEON,
-                                    board_buttons[index].midi + (trans_octave * 12) + trans_semi,
-                                    value   );
-                    // Set the pressed LED
-                    board_buttons[index].active = 1;
-                    // Also set any LEDs of the same note
-                    for (u8 i = 0; i < BUTTON_COUNT; ++i)
-                    {
-                        u8 maxOctaves = 8;
-                        for (u8 j = 0; j < maxOctaves; ++j)             
+                    if (board_buttons[index].type == 0) {   // Note
+                        if (value)
                         {
-                            if (board_buttons[i].midi == board_buttons[index].midi)
+                            // Send the MIDI data
+                            hal_send_midi(  USBMIDI, NOTEON,
+                                            board_buttons[index].midi + (trans_octave * 12) + trans_semi,
+                                            value   );
+                            // Set the pressed LED
+                            board_buttons[index].active = 1;
+                            // Also set any LEDs of the same note
+                            for (u8 i = 0; i < BUTTON_COUNT; ++i)
                             {
-                                board_buttons[i].active = 1;
-                                break;
+                                u8 maxOctaves = 8;
+                                for (u8 j = 0; j < maxOctaves; ++j)             
+                                {
+                                    if (board_buttons[i].midi == board_buttons[index].midi)
+                                    {
+                                        board_buttons[i].active = 1;
+                                        break;
+                                    }
+                                    // else if (board_buttons[i].midi == j*12+10)   // Same note, any octave
+                                    // {
+                                    //     board_buttons[i].active = 2;
+                                    // }
+                                }
                             }
-                            // else if (board_buttons[i].midi == j*12+10)   // Same note, any octave
-                            // {
-                            //     board_buttons[i].active = 2;
-                            // }
-                        }
-                    }
-                } else {
-                    // Same as above, but in reverse
-                    hal_send_midi(  USBMIDI, NOTEOFF, 
-                                    board_buttons[index].midi + (trans_octave * 12) + trans_semi,
-                                    value   );
-                    board_buttons[index].active = 0;
-                    for (u8 i = 0; i < BUTTON_COUNT; ++i)
-                    {
-                        u8 maxOctaves = 8;
-                        for (u8 j = 0; j < maxOctaves; ++j)             
-                        {
-                            if (board_buttons[i].midi == board_buttons[index].midi)
+                        } else {
+                            // Same as above, but in reverse
+                            hal_send_midi(  USBMIDI, NOTEOFF, 
+                                            board_buttons[index].midi + (trans_octave * 12) + trans_semi,
+                                            value   );
+                            board_buttons[index].active = 0;
+                            for (u8 i = 0; i < BUTTON_COUNT; ++i)
                             {
-                                board_buttons[i].active = 0;
-                                break;
+                                u8 maxOctaves = 8;
+                                for (u8 j = 0; j < maxOctaves; ++j)             
+                                {
+                                    if (board_buttons[i].midi == board_buttons[index].midi)
+                                    {
+                                        board_buttons[i].active = 0;
+                                        break;
+                                    }
+                                    // else if (board_buttons[i].midi == j*12+10)   // Same note, any octave
+                                    // {
+                                    //     board_buttons[i].active = 0;
+                                    // }
+                                }
                             }
-                            // else if (board_buttons[i].midi == j*12+10)   // Same note, any octave
-                            // {
-                            //     board_buttons[i].active = 0;
-                            // }
                         }
+                    } else if (board_buttons[index].type == 1) {
+                        hal_plot_led(TYPESETUP, 0, 0x00, 0xff, 0x00);
+                        hal_send_midi(USBMIDI, CC, index, value);
                     }
-
-
-
-                    // for (u8 i = 0; i < BUTTON_COUNT; ++i)
-                    // {
-                    //     if (board_buttons[i].midi == board_buttons[index].midi)
-                    //     {
-                    //         board_buttons[i].active = 0;
-                    //     }
-                    // }
                 }
+                break;
+                    
+                case TYPESETUP:
+                {
+                    if (value)
+                    {   
+                        //  Move to setup view
+                        drawBlank();
+                        currentview = VIEWSETUP;
+                    }
+                }
+                break;
             }
         }
         break;
-            
-        case TYPESETUP:     // Could use this to send <some data> up the wire in the absence of a serial port for debugging.
-        {                   // Guess I should figure out this whole sysex thing. Still very much a TODO.
-            if (value)
-            {   
-                u8 debugArray[11] = {
-                //  Header          Manufacturer    Model           Sending         Address         ???
-                    0xf0,           0x00,           0x20,           0x12,           0x00,           0x10,
-                //  My data 0       My data 1       My data 2       My data 3                       End
-                    0xde,           0xad,           0xbe,           0xef,                           0xf7
-                };
-                hal_send_sysex(USBMIDI, debugArray, 11);
+
+        // Setup view
+        case VIEWSETUP:
+        {
+            switch (type)
+            {
+                case TYPESETUP:
+                {
+                    if (value)
+                    {
+                        // Move to note view
+                        drawBlank();
+                        currentview = VIEWNOTE;
+                    }
+                }
+                break;
             }
         }
-        break;
     }
 }
 
@@ -193,14 +222,14 @@ void app_aftertouch_event(u8 index, u8 value)
 void app_cable_event(u8 type, u8 value)
 {
     // Light the Setup LED to indicate cable connections
-    if (type == MIDI_IN_CABLE)
-    {
-        hal_plot_led(TYPESETUP, 0, 0, value, 0); // green
-    }
-    else if (type == MIDI_OUT_CABLE)
-    {
-        hal_plot_led(TYPESETUP, 0, value, 0, 0); // red
-    }
+    // if (type == MIDI_IN_CABLE)
+    // {
+    //     hal_plot_led(TYPESETUP, 0, 0, value, 0); // green
+    // }
+    // else if (type == MIDI_OUT_CABLE)
+    // {
+    //     hal_plot_led(TYPESETUP, 0, value, 0, 0); // red
+    // }
 }
 
 //______________________________________________________________________________
@@ -227,19 +256,58 @@ void app_timer_event() // Gets called on 1kHz clock
     if (++redrawms >= 50)   // 20fps? -- If we run this at the 1kHz clock we get LED flicker
     {
         redrawms = 0;
-        for (int i = 0; i < BUTTON_COUNT; ++i)
+        redrawView();
+    }
+}
+
+void drawBlank()
+{
+    // For when we need to clear the board
+    for (int i = 0; i < BUTTON_COUNT; ++i)
+    {
+        hal_plot_led(TYPEPAD, i, 0x00, 0x00, 0x00);
+        hal_plot_led(TYPESETUP, 0, 0x00, 0x00, 0x00);
+    }
+}
+
+
+void redrawView()
+{
+    // Moved stuff from the above interrupt to keep it more "timer" related and less "drawing" related.
+    // Maybe split out into different views if we end up adding more? For just Note & Setup maybe it's not too messy.
+    switch (currentview)
+    {
+        case VIEWNOTE:
         {
-            if (board_buttons[i].active == 1)
+            for (int i = 0; i < BUTTON_COUNT; ++i)
+            {
+                if (board_buttons[i].active == 1)
+                {
+                    hal_plot_led(TYPEPAD, board_buttons[i].index, 0xff, 0x00, 0x00);
+                }
+                else if (board_buttons[i].active == 2)
+                {
+                    hal_plot_led(TYPEPAD, board_buttons[i].index, 0xff, 0xff, 0x00);
+                }
+                else
+                {
+                    hal_plot_led(TYPEPAD, board_buttons[i].index, board_buttons[i].colour[0], board_buttons[i].colour[1], board_buttons[i].colour[2]);
+                }
+            }
+        }
+        break;
+
+        case VIEWSETUP:
+        {
+            // TODO: SETUP STUFF HERE
+        }
+        break;
+
+        default:
+        {
+            for (int i = 0; i < BUTTON_COUNT; ++i)
             {
                 hal_plot_led(TYPEPAD, board_buttons[i].index, 0xff, 0x00, 0x00);
-            }
-            else if (board_buttons[i].active == 2)
-            {
-                hal_plot_led(TYPEPAD, board_buttons[i].index, 0xff, 0xff, 0x00);
-            }
-            else
-            {
-                hal_plot_led(TYPEPAD, board_buttons[i].index, board_buttons[i].colour[0], board_buttons[i].colour[1], board_buttons[i].colour[2]);
             }
         }
     }
@@ -263,6 +331,7 @@ void buttons_init() {
     for (int i = 0; i < BUTTON_COUNT; ++i)
     {
         board_buttons[i].index      = i;
+        board_buttons[i].type       = 0;
         board_buttons[i].midi       = 0;
         board_buttons[i].active     = 0;
         board_buttons[i].colour[0]  = 0x00;
@@ -283,6 +352,11 @@ void buttons_init() {
     for (int i = 1; i < 9; ++i)
     {
         board_buttons[10*i+9].type = 1;
+
+        // See if I'm actually handling this properly already...
+        board_buttons[i].colour[0]  = 0xff;
+        board_buttons[i].colour[1]  = 0xff;
+        board_buttons[i].colour[2]  = 0xff;
     }
 
     //  Set the MIDI notes so each row goes up in fourths cause I'm a lazy guitarist
