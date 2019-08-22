@@ -36,6 +36,7 @@
 //______________________________________________________________________________
 
 #include "app.h"
+#include "font.h"
 
 // store ADC frame pointer
 static const u16 *g_ADC = 0;
@@ -48,29 +49,19 @@ u8 g_Buttons[BUTTON_COUNT] = {0};
 // Allllll the surface information is going to live in here.
 #define TYPE_NOTE   0
 #define TYPE_CC     1
-typedef struct button_note button_note;
-struct button_note {
-       u8 index;        //  Physical HAL index (1..98)
-       u8 midi;         //  MIDI number
-       u8 colour[3];    //  Colour to display when idle
-    _Bool type;         //  0: Note  1: CC
-       u8 active;       //  0: idle  1: Active   2: Alternate 
-};
-typedef struct button_setup button_setup;
-struct button_setup {
-       u8 index;        //  Physical HAL index (1..98)
-       u8 colour[3];    //  Colour to display when idle
-       u8 altcolour[3]; //  Colour to display when active
-       u8 value;        //  Some payload?
-       u8 active;       //  0: idle  1: Active   2: Alternate 
-       u8 cancelgroup;  //  Only intercancel other buttons in this group
-};
+#define CANCEL_NONE     0
+#define CANCEL_CCS      1
+#define CANCEL_TENS     2
+#define CANCEL_UNITS    3
+
 
 
 
 // Create one for each view so that the buttons can do different stuff.
 button_note board_buttons_note[BUTTON_COUNT];
 button_setup board_buttons_setup[BUTTON_COUNT];
+u8 board_buttons_note_size      = sizeof(board_buttons_note)    / sizeof(button_note);
+u8 board_buttons_setup_size     = sizeof(board_buttons_setup)   / sizeof(button_setup);
 
 
 // Transpose offsets
@@ -108,21 +99,37 @@ u8 currentview = 0;
 
 //      --              --              --              --              --
 //  Some setup stuff for Setup view
-u8 ccsetup_tens[13] = {
+u8 ccsetup_tens_indices[13] = {
     11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25
 //  00  10  20  30  40  50  60  70  80  90  100 110 120
 };
-u8 ccsetup_units[10] = {
+u8 ccsetup_units_indices[10] = {
     31, 32, 33, 34, 35, 36, 37, 38, 41, 42
 //  0   1   2   3   4   5   6   7   8   9
 };
+u8 ccsetup_selected     = 0;    // Store the board_buttons_setup index of the selected CC button
 u8 ccsetup_activetens = 0;
 u8 ccsetup_activeunits = 0;
+
+u8 ccbutton_indices[8] = {  19, 29, 39, 49, 59, 69, 79, 89  };
+u8 ccbutton_indices_length = sizeof(ccbutton_indices) / sizeof(u8);
 
 
 
 
 //______________________________________________________________________________
+
+void intercancel(button_setup targets[], u8 length, u8 group, u8 cancelval)
+{
+    for (int i = 0; i < length; i++)
+    {
+        if (targets[i].active != cancelval && targets[i].cancelgroup == group)
+        {
+            targets[i].active = cancelval;
+        }
+    }
+}
+
 
 void app_surface_event(u8 type, u8 index, u8 value)
 {
@@ -145,10 +152,10 @@ void app_surface_event(u8 type, u8 index, u8 value)
                             // Set the pressed LED
                             board_buttons_note[index].active = 1;
                             // Also set any LEDs of the same note
-                            for (u8 i = 0; i < BUTTON_COUNT; ++i)
+                            for (u8 i = 0; i < BUTTON_COUNT; i++)
                             {
                                 u8 maxOctaves = 8;
-                                for (u8 j = 0; j < maxOctaves; ++j)             
+                                for (u8 j = 0; j < maxOctaves; j++)             
                                 {
                                     if (board_buttons_note[i].midi == board_buttons_note[index].midi)
                                     {
@@ -167,10 +174,10 @@ void app_surface_event(u8 type, u8 index, u8 value)
                                             board_buttons_note[index].midi + (trans_octave * 12) + trans_semi,
                                             value   );
                             board_buttons_note[index].active = 0;
-                            for (u8 i = 0; i < BUTTON_COUNT; ++i)
+                            for (u8 i = 0; i < BUTTON_COUNT; i++)
                             {
                                 u8 maxOctaves = 8;
-                                for (u8 j = 0; j < maxOctaves; ++j)             
+                                for (u8 j = 0; j < maxOctaves; j++)             
                                 {
                                     if (board_buttons_note[i].midi == board_buttons_note[index].midi)
                                     {
@@ -214,7 +221,67 @@ void app_surface_event(u8 type, u8 index, u8 value)
                 {
                     if (value)
                     {
+                        // hal_send_midi(USBMIDI, NOTEON, index, value);
+                        for (int i = 0; i < BUTTON_COUNT; i++)
+                        {
+                            // CC Buttons
+                            for (int j = 0; j < sizeof(ccbutton_indices) / sizeof(u8); j++)
+                            {
+                                if  (board_buttons_setup[i].index == index && board_buttons_setup[i].index == ccbutton_indices[j])
+                                {
+                                    if (board_buttons_setup[i].active == 0)
+                                    {
+                                        intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_CCS, 0);
+                                        board_buttons_setup[i].active = 1;
+                                        ccsetup_setActiveNumberDisplay(board_buttons_setup[i]);
+                                    } else {
+                                        board_buttons_setup[i].active = 0;
+                                    }
+                                }
+                            }
+                            //  TENS
+                            for (int j = 0; j < sizeof(ccsetup_tens_indices) / sizeof(u8); j++)
+                            {
+                                if (board_buttons_setup[i].index == index && board_buttons_setup[i].index == ccsetup_tens_indices[j])
+                                {
+                                    hal_send_midi(USBMIDI, NOTEON, board_buttons_setup[i].value, board_buttons_setup[i].active);
+                                    if (board_buttons_setup[i].active == 1)
+                                    {
+                                        intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_TENS, 1);
+                                        board_buttons_setup[i].active = 2;
+                                    }
+                                    else if (board_buttons_setup[i].active == 2)
+                                    {
+                                        //  Do nothing? Want to prevent user from deselecting a ten or unit
+                                    } else {
+                                        board_buttons_setup[i].active = 1;
+                                    }
+                                }
+                            }
+                            //  UNITS
+                            for (int j = 0; j < sizeof(ccsetup_units_indices) / sizeof(u8); j++)
+                            {
+                                if (board_buttons_setup[i].index == index && board_buttons_setup[i].index == ccsetup_units_indices[j])
+                                {
+                                    hal_send_midi(USBMIDI, NOTEON, board_buttons_setup[i].value, board_buttons_setup[i].active);
+                                    if (board_buttons_setup[i].active == 1)
+                                    {
+                                        intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_UNITS, 1);
+                                        board_buttons_setup[i].active = 2;
+                                    }
+                                    else if (board_buttons_setup[i].active == 2)
+                                    {
+                                        //  Do nothing? Want to prevent user from deselecting a ten or unit
+                                    } else {
+                                        board_buttons_setup[i].active = 1;
+                                    }
+                                }
+                            }
 
+                        }
+
+                    } else {
+                        // hal_send_midi(USBMIDI, NOTEOFF, index, value);
                     }
                 }
                 break;
@@ -302,13 +369,47 @@ void app_timer_event() // Gets called on 1kHz clock
 void drawBlank()
 {
     // For when we need to clear the board
-    for (int i = 0; i < BUTTON_COUNT; ++i)
+    for (int i = 0; i < BUTTON_COUNT; i++)
     {
         hal_plot_led(TYPEPAD, i, 0x00, 0x00, 0x00);
         hal_plot_led(TYPESETUP, 0, 0x00, 0x00, 0x00);
     }
 }
 
+void ccsetup_setActiveNumberDisplay(button_setup cc)
+{
+    u8 ccnum = cc.value;
+    u8 ccu  = ccnum %10;
+    u8 cct  = (ccnum/10)%10;
+    u8 cch  = (ccnum/100)%10;
+    cct     = cct+(10*cch);     // 'cause I can have two-digit tens in my system. Take that, maths.
+
+    //DEBUG
+    hal_send_midi(USBMIDI, NOTEON, 100, cc.value);
+    hal_send_midi(USBMIDI, NOTEOFF, 10, cct);
+    hal_send_midi(USBMIDI, NOTEOFF, 1, ccu);
+
+
+    for (u8 i = 0; i < BUTTON_COUNT; i++)
+    {
+        for (u8 j = 0; j < sizeof(ccsetup_tens_indices) / sizeof(u8); j++)
+        {
+            if (board_buttons_setup[i].index == ccsetup_tens_indices[j] && board_buttons_setup[i].value == cct)
+            {
+                intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_TENS, 1);
+                board_buttons_setup[i].active = 2;
+            }
+        }
+        for (u8 j = 0; j < sizeof(ccsetup_units_indices) / sizeof(u8); j++)
+        {
+            if (board_buttons_setup[i].index == ccsetup_units_indices[j] && board_buttons_setup[i].value == ccu)
+            {
+                intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_UNITS, 1);
+                board_buttons_setup[i].active = 2;
+            }
+        }
+    }
+}
 
 void redrawView()
 {
@@ -318,7 +419,7 @@ void redrawView()
     {
         case VIEWNOTE:
         {
-            for (int i = 0; i < BUTTON_COUNT; ++i)
+            for (int i = 0; i < BUTTON_COUNT; i++)
             {
                 if (board_buttons_note[i].active == 1)
                 {
@@ -338,14 +439,13 @@ void redrawView()
 
         case VIEWSETUP:
         {
-            // TODO: SETUP STUFF HERE
-            for (int i = 0; i < BUTTON_COUNT; ++i)
+            for (int i = 0; i < BUTTON_COUNT; i++)
             {
-                if (board_buttons_setup[i].active == 0)
-                {
+                if (board_buttons_setup[i].active == 1)
+                {                              
                     hal_plot_led(TYPEPAD, board_buttons_setup[i].index, board_buttons_setup[i].colour[0], board_buttons_setup[i].colour[1], board_buttons_setup[i].colour[2]);
                 }
-                else if (board_buttons_setup[i].active == 1)
+                else if (board_buttons_setup[i].active == 2)
                 {
                     hal_plot_led(TYPEPAD, board_buttons_setup[i].index, board_buttons_setup[i].altcolour[0], board_buttons_setup[i].altcolour[1], board_buttons_setup[i].altcolour[2]);
                 }
@@ -359,7 +459,7 @@ void redrawView()
 
         default:
         {
-            for (int i = 0; i < BUTTON_COUNT; ++i)
+            for (int i = 0; i < BUTTON_COUNT; i++)
             {
                 hal_plot_led(TYPEPAD, i, 0xff, 0x00, 0x00);
             }
@@ -382,7 +482,7 @@ void app_init(const u16 *adc_raw)
 
 void buttons_init() {
     // Zero the array
-    for (int i = 0; i < BUTTON_COUNT; ++i)
+    for (int i = 0; i < BUTTON_COUNT; i++)
     {
         board_buttons_note[i].index      = i;
         board_buttons_note[i].type       = 0;
@@ -403,8 +503,9 @@ void buttons_init() {
         board_buttons_setup[i].altcolour[2] = 0x00;
     }
 
+
     //  Set note flags on square buttons
-    for (int i = 1; i < 9; ++i)
+    for (int i = 1; i < 9; i++)
     {
         for (int j = 1; j < 9; ++j)
         {
@@ -413,16 +514,16 @@ void buttons_init() {
     }
 
     //  Set CC flags on circle buttons
-    for (int i = 1; i < 9; ++i)
+    for (int i = 1; i < 9; i++)
     {
         board_buttons_note[10*i+9].type = 1;
     }
 
     //  Set the MIDI notes so each row goes up in fourths cause I'm a lazy guitarist
     u8 row_offset = 0;
-    for (int i = 1; i < 9; ++i)
+    for (int i = 1; i < 9; i++)
     {
-        for (int j = 1; j < 9; ++j)
+        for (int j = 1; j < 9; j++)
         {
             //  Cheeky +1 because we want the bottom corner to start as 12 (MIDI C), not 11 (HAL ID)
             board_buttons_note[i*10+j].midi = (i*10+j) - row_offset + 24 + 1; 
@@ -431,7 +532,7 @@ void buttons_init() {
     }
 
     //  Set some pretty colours for note mode
-    for (u8 i = 0; i < BUTTON_COUNT; ++i)
+    for (u8 i = 0; i < BUTTON_COUNT; i++)
     {
         // if (board_buttons_note[i].type != 0) { break; }      // Escape non-note buttons. I'll do something with these later...
 
@@ -514,42 +615,60 @@ void buttons_init() {
     }
 
     //  Set some pretty colours for setup mode
-    for (u8 i = 0; i < BUTTON_COUNT; ++i)
+    for (u8 i = 0; i < BUTTON_COUNT; i++)
     {
-        for (u8 j = 0; j < sizeof(ccsetup_tens) / sizeof(u8); ++j)
+        for (u8 j = 0; j < sizeof(ccsetup_tens_indices) / sizeof(u8); j++)
         {
-            if (board_buttons_setup[i].index == ccsetup_tens[j])
+            if (board_buttons_setup[i].index == ccsetup_tens_indices[j])
             {
                 board_buttons_setup[i].colour[0] = 0x30;
-                board_buttons_setup[i].colour[1] = 0x30;
-                board_buttons_setup[i].colour[2] = 0xa0;
-                board_buttons_setup[i].altcolour[0] = 0x30;
-                board_buttons_setup[i].altcolour[1] = 0x30;
-                board_buttons_setup[i].altcolour[2] = 0xff;
+                board_buttons_setup[i].colour[1] = 0xa0;
+                board_buttons_setup[i].colour[2] = 0x50;
+                board_buttons_setup[i].altcolour[0] = 0xff;
+                board_buttons_setup[i].altcolour[1] = 0x05;
+                board_buttons_setup[i].altcolour[2] = 0x00;
                 board_buttons_setup[i].value = j;
-                board_buttons_setup[i].cancelgroup  = 1;
+                board_buttons_setup[i].cancelgroup  = CANCEL_TENS;
+                board_buttons_setup[i].active       = 1;
             }
-            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == 1)   // Default CC 00
+            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == CANCEL_TENS)   // Default CC 00
             {
-                board_buttons_setup[i].active = 1;
+                board_buttons_setup[i].active = 2;
             }
         }
-        for (u8 j = 0; j < sizeof(ccsetup_units) / sizeof(u8); ++j)
+        for (u8 j = 0; j < sizeof(ccsetup_units_indices) / sizeof(u8); j++)
         {
-            if (board_buttons_setup[i].index == ccsetup_units[j])
+            if (board_buttons_setup[i].index == ccsetup_units_indices[j])
             {
-                board_buttons_setup[i].colour[0] = 0x90;
-                board_buttons_setup[i].colour[1] = 0x30;
+                board_buttons_setup[i].colour[0] = 0x10;
+                board_buttons_setup[i].colour[1] = 0x50;
                 board_buttons_setup[i].colour[2] = 0xa0;
-                board_buttons_setup[i].altcolour[0] = 0xa0;
-                board_buttons_setup[i].altcolour[1] = 0x30;
-                board_buttons_setup[i].altcolour[2] = 0xff;
+                board_buttons_setup[i].altcolour[0] = 0xff;
+                board_buttons_setup[i].altcolour[1] = 0x00;
+                board_buttons_setup[i].altcolour[2] = 0x05;
                 board_buttons_setup[i].value = j;
-                board_buttons_setup[i].cancelgroup  = 2;
+                board_buttons_setup[i].cancelgroup  = CANCEL_UNITS;
+                board_buttons_setup[i].active       = 1;
             }
-            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == 2)   // Default CC 00
+            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == CANCEL_UNITS)   // Default CC 00
             {
-                board_buttons_setup[i].active = 1;
+                board_buttons_setup[i].active = 2;
+            }
+        }
+        for (u8 j = 0; j < sizeof(ccbutton_indices) / sizeof(u8); j++)
+        {
+            if (board_buttons_setup[i].index == ccbutton_indices[j])
+            {
+                board_buttons_setup[i].value        = 122;
+                board_buttons_setup[i].active       = 0;
+                board_buttons_setup[i].flashing     = 0;
+                board_buttons_setup[i].colour[0]    = 0x10;
+                board_buttons_setup[i].colour[1]    = 0x00;
+                board_buttons_setup[i].colour[2]    = 0x00;
+                board_buttons_setup[i].altcolour[0] = 0xff;
+                board_buttons_setup[i].altcolour[1] = 0x00;
+                board_buttons_setup[i].altcolour[2] = 0x00;
+                board_buttons_setup[i].cancelgroup  = CANCEL_CCS;
             }
         }
     }

@@ -232,9 +232,35 @@ void app_surface_event(u8 type, u8 index, u8 value);
  */
 void app_aftertouch_event(u8 index, u8 value);
 
+typedef struct button_note button_note;
+struct button_note {
+       u8 index;        //  Physical HAL index (1..98)
+       u8 midi;         //  MIDI number
+       u8 colour[3];    //  Colour to display when idle
+    _Bool type;         //  0: Note  1: CC
+       u8 active;       //  0: idle  1: Active   2: Alternate 
+};
+typedef struct button_setup button_setup;
+struct button_setup {
+       u8 index;        //  Physical HAL index (1..98)
+       u8 colour[3];    //  Colour to display when idle
+       u8 altcolour[3]; //  Colour to display when active
+       u8 value;        //  Some payload?
+       u8 active;       //  0: idle  1: Active   2: Alternate 
+       u8 cancelgroup;  //  Only intercancel other buttons in this group
+       _Bool flashing;  //  Is it flashing?
+};
+
+
+
+
+
 void drawFill();
 void drawScale();
 void buttons_init();
+void ccsetup_setActiveNumberDisplay(button_setup);
+void drawBlank();
+void redrawView();
 
 
 
