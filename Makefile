@@ -3,6 +3,7 @@ BUILDDIR = build
 TOOLS = tools
 
 SOURCES += src/app.c
+SOURCES += src/view_setup_cc.c
 
 INCLUDES += -Iinclude -I
 

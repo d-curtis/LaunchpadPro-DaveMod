@@ -233,7 +233,7 @@ void app_surface_event(u8 type, u8 index, u8 value);
 void app_aftertouch_event(u8 index, u8 value);
 
 typedef struct button_note button_note;
-struct button_note {
+extern struct button_note {
        u8 index;        //  Physical HAL index (1..98)
        u8 midi;         //  MIDI number
        u8 colour[3];    //  Colour to display when idle
@@ -241,7 +241,7 @@ struct button_note {
        u8 active;       //  0: idle  1: Active   2: Alternate 
 };
 typedef struct button_setup button_setup;
-struct button_setup {
+extern struct button_setup {
        u8 index;        //  Physical HAL index (1..98)
        u8 colour[3];    //  Colour to display when idle
        u8 altcolour[3]; //  Colour to display when active
@@ -258,9 +258,32 @@ struct button_setup {
 void drawFill();
 void drawScale();
 void buttons_init();
-void ccsetup_setActiveNumberDisplay(button_setup);
+// void ccsetup_setActiveNumberDisplay(button_setup);
 void drawBlank();
 void redrawView();
+void intercancel(button_setup targets[], u8 length, u8 group, u8 cancelval);
+
+
+//          ---         ---         ---
+
+#define BUTTON_COUNT 100
+// Currently active view (global)
+#define VIEWNOTE    0
+#define VIEWSETUP   1
+
+// Create one for each view so that the buttons can do different stuff.
+extern button_note board_buttons_note[BUTTON_COUNT];
+u8 board_buttons_note_size;
+
+extern u8 currentview;
+
+
+
+
+
+
+
+
 
 
 
