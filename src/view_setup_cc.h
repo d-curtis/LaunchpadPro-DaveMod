@@ -1,6 +1,7 @@
 #ifndef VIEW_SETUP_CC_H
 
 #include "app.h"
+#include "stdbool.h"
 
 #define CANCEL_NONE     0
 #define CANCEL_CCS      1
@@ -22,9 +23,10 @@ u8 board_buttons_setup_size;
 
 
 
-
+void setup_cc_init();
 void setup_cc_redrawBoard();
-void setup_cc_setActiveNumberDisplay(button_setup cc);
+void drawFont(u8 anchor, bool symbol[4][3], u8 r, u8 g, u8 b);
+void setup_cc_setActiveNumberDisplay(button_setup *cc);
 void setup_cc_surfaceEvent(u8 type, u8 index, u8 value);
 
 

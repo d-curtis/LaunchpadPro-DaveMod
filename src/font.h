@@ -1,4 +1,5 @@
 #ifndef FONT_H
+#define FONT_H
 
 #include "app.h"
 #include "stdbool.h"
@@ -13,6 +14,14 @@ bool FONT_34_SPACE[4][3] = {
     {   0, 0, 0     }
 };
 
+//  ALL
+bool FONT_34_ALL[4][3] = {
+    {   1, 1, 1     },
+    {   1, 1, 1     },
+    {   1, 1, 1     },
+    {   1, 1, 1     }
+};
+
 //  0
 bool FONT_34_0[4][3] = {
     {   1, 1, 1     },
@@ -23,13 +32,6 @@ bool FONT_34_0[4][3] = {
 
 //  1
 bool FONT_34_1[4][3] = {
-    {   1, 1, 0     },
-    {   0, 1, 0     },
-    {   0, 1, 0     },
-    {   1, 1, 1     }
-};
-
-bool FONT_34_1_SLIM[4][3] = {   // Used in CC setup
     {   0, 1, 0     },
     {   0, 1, 0     },
     {   0, 1, 0     },
@@ -337,6 +339,4 @@ bool FONT_34_APOSTROPHE[4][3] = {
     {   0, 0, 0     }
 };
 
-
-#define FONT_H
 #endif

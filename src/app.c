@@ -36,7 +36,6 @@
 //______________________________________________________________________________
 
 #include "app.h"
-#include "font.h"
 #include "view_setup_cc.h"
 
 // store ADC frame pointer
@@ -339,16 +338,6 @@ void buttons_init() {
         board_buttons_note[i].colour[0]  = 0x00;
         board_buttons_note[i].colour[1]  = 0x00;
         board_buttons_note[i].colour[2]  = 0x00;
-
-        board_buttons_setup[i].index        = i;
-        board_buttons_setup[i].value        = 0;
-        board_buttons_setup[i].active       = 0;
-        board_buttons_setup[i].colour[0]    = 0x00;
-        board_buttons_setup[i].colour[1]    = 0x00;
-        board_buttons_setup[i].colour[2]    = 0x00;
-        board_buttons_setup[i].altcolour[0] = 0x00;
-        board_buttons_setup[i].altcolour[1] = 0x00;
-        board_buttons_setup[i].altcolour[2] = 0x00;
     }
 
 
@@ -462,62 +451,8 @@ void buttons_init() {
         }
     }
 
-    //  Set some pretty colours for setup mode
-    for (u8 i = 0; i < BUTTON_COUNT; i++)
-    {
-        for (u8 j = 0; j < sizeof(ccsetup_tens_indices) / sizeof(u8); j++)
-        {
-            if (board_buttons_setup[i].index == ccsetup_tens_indices[j])
-            {
-                board_buttons_setup[i].colour[0] = 0x30;
-                board_buttons_setup[i].colour[1] = 0xa0;
-                board_buttons_setup[i].colour[2] = 0x50;
-                board_buttons_setup[i].altcolour[0] = 0xff;
-                board_buttons_setup[i].altcolour[1] = 0x05;
-                board_buttons_setup[i].altcolour[2] = 0x00;
-                board_buttons_setup[i].value = j;
-                board_buttons_setup[i].cancelgroup  = CANCEL_TENS;
-                board_buttons_setup[i].active       = 1;
-            }
-            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == CANCEL_TENS)   // Default CC 00
-            {
-                board_buttons_setup[i].active = 2;
-            }
-        }
-        for (u8 j = 0; j < sizeof(ccsetup_units_indices) / sizeof(u8); j++)
-        {
-            if (board_buttons_setup[i].index == ccsetup_units_indices[j])
-            {
-                board_buttons_setup[i].colour[0] = 0x10;
-                board_buttons_setup[i].colour[1] = 0x50;
-                board_buttons_setup[i].colour[2] = 0xa0;
-                board_buttons_setup[i].altcolour[0] = 0xff;
-                board_buttons_setup[i].altcolour[1] = 0x00;
-                board_buttons_setup[i].altcolour[2] = 0x05;
-                board_buttons_setup[i].value = j;
-                board_buttons_setup[i].cancelgroup  = CANCEL_UNITS;
-                board_buttons_setup[i].active       = 1;
-            }
-            if (board_buttons_setup[i].value == 0 && board_buttons_setup[i].cancelgroup == CANCEL_UNITS)   // Default CC 00
-            {
-                board_buttons_setup[i].active = 2;
-            }
-        }
-        for (u8 j = 0; j < sizeof(ccbutton_indices) / sizeof(u8); j++)
-        {
-            if (board_buttons_setup[i].index == ccbutton_indices[j])
-            {
-                board_buttons_setup[i].value        = 122;
-                board_buttons_setup[i].active       = 0;
-                board_buttons_setup[i].flashing     = 0;
-                board_buttons_setup[i].colour[0]    = 0x10;
-                board_buttons_setup[i].colour[1]    = 0x00;
-                board_buttons_setup[i].colour[2]    = 0x00;
-                board_buttons_setup[i].altcolour[0] = 0xff;
-                board_buttons_setup[i].altcolour[1] = 0x00;
-                board_buttons_setup[i].altcolour[2] = 0x00;
-                board_buttons_setup[i].cancelgroup  = CANCEL_CCS;
-            }
-        }
-    }
+    setup_cc_init();
+
+
+
 }
