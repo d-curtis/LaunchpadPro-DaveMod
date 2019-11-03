@@ -339,16 +339,5 @@ Equivalent of app_surface_event - specific to view_setup_cc
         }
     }
     break;
-
-    case TYPESETUP:
-    {
-        if (value)
-        {
-            // Move to note view
-            drawBlank();
-            currentview = VIEWNOTE;
-        }
-    }
-    break;
     }
 }

@@ -234,11 +234,11 @@ void app_aftertouch_event(u8 index, u8 value);
 
 typedef struct button_note button_note;
 extern struct button_note {
-       u8 index;        //  Physical HAL index (1..98)
-       u8 midi;         //  MIDI number
-       u8 colour[3];    //  Colour to display when idle
-    _Bool type;         //  0: Note  1: CC
-       u8 active;       //  0: idle  1: Active   2: Alternate 
+        u8 index;        //  Physical HAL index (1..98)
+        u8 midi;         //  MIDI number
+        u8 colour[3];    //  Colour to display when idle
+        u8 type;         //  0: Note  1: CC       FF: Not used
+        u8 active;       //  0: idle  1: Active   2: Alternate 
 };
 typedef struct button_setup button_setup;
 extern struct button_setup {
@@ -249,6 +249,15 @@ extern struct button_setup {
        u8 active;       //  0: idle  1: Active   2: Alternate 
        u8 cancelgroup;  //  Only intercancel other buttons in this group
        _Bool flashing;  //  Is it flashing?
+};
+typedef struct button_global button_global;
+extern struct button_global {
+    u8 index;
+    u8 colour[3];
+    u8 altcolour[3];
+    u8 active;
+    u8 cancelgroup;
+    _Bool flashing;
 };
 
 
@@ -268,10 +277,15 @@ void intercancel(button_setup targets[], u8 length, u8 group, u8 cancelval);
 
 #define BUTTON_COUNT 100
 // Currently active view (global)
-#define VIEWNOTE    0
-#define VIEWSETUP   1
+#define VIEWNOTE            0
+#define VIEWSETUP           1
+#define VIEWSETUPSESSION    2
+#define VIEWSETUPNOTE       3
+#define VIEWSETUPDEVICE     4
+#define VIEWSETUPUSER       5
 
 // Create one for each view so that the buttons can do different stuff.
+extern button_global board_buttons_global[4];
 extern button_note board_buttons_note[BUTTON_COUNT];
 u8 board_buttons_note_size;
 
