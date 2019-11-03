@@ -246,8 +246,9 @@ Get the tens and units, munge them together, push it to the cc selected
     hal_plot_led(TYPESETUP, 0, 0xff, 0x00, 0x00);
 
     target->value = targetTen*10+targetUnit;
-    hal_send_midi(USBMIDI, NOTEON, target->value, ccbutton_selected->value);
     setup_cc_setActiveNumberDisplay(target);
+
+    update_ccs(board_buttons_setup);
 }
 
 void setup_cc_surfaceEvent(u8 type, u8 index, u8 value)
@@ -287,7 +288,6 @@ Equivalent of app_surface_event - specific to view_setup_cc
                 {
                     if (board_buttons_setup[i].index == index && board_buttons_setup[i].index == ccsetup_tens_indices[j])
                     {
-                        hal_send_midi(USBMIDI, NOTEON, board_buttons_setup[i].value, board_buttons_setup[i].active);
                         if (board_buttons_setup[i].active == 1)
                         {
                             intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_TENS, 1);
@@ -312,7 +312,6 @@ Equivalent of app_surface_event - specific to view_setup_cc
                 {
                     if (board_buttons_setup[i].index == index && board_buttons_setup[i].index == ccsetup_units_indices[j])
                     {
-                        hal_send_midi(USBMIDI, NOTEON, board_buttons_setup[i].value, board_buttons_setup[i].active);
                         if (board_buttons_setup[i].active == 1)
                         {
                             intercancel(board_buttons_setup, board_buttons_setup_size, CANCEL_UNITS, 1);

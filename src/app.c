@@ -227,9 +227,16 @@ void app_surface_event(u8 type, u8 index, u8 value)
                                 }
                             }
                         }
-                    } else if (board_buttons_note[index].type == 1) {       // CC
-                        hal_plot_led(TYPESETUP, 0, 0x00, 0x00, 0xff);
-                        hal_send_midi(USBMIDI, CC, index, value);
+                    } else if (board_buttons_note[index].type == 1 && value) {       // CC
+                        if (board_buttons_note[index].active == 2) {    // Already high
+                            hal_send_midi(USBMIDI, CC, board_buttons_note[index].midi, 0);
+                            board_buttons_note[index].active = 1;
+                        }
+                        else
+                        {
+                            hal_send_midi(USBMIDI, CC, board_buttons_note[index].midi, 127);
+                            board_buttons_note[index].active = 2;
+                        }
                     }
                 }
                 break;
@@ -472,69 +479,69 @@ void buttons_init() {
                 }
                 else if (board_buttons_note[i].midi == j*12+1)   // C#   (Minor 2nd)
                 {
-                    board_buttons_note[i].colour[0] = 0xa0;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xff;
+                    board_buttons_note[i].colour[0] = 0x00;
+                    board_buttons_note[i].colour[1] = 0x00;
+                    board_buttons_note[i].colour[2] = 0x01;
                 }
                 else if (board_buttons_note[i].midi == j*12+2)   // D    (Major 2nd)
                 {
-                    board_buttons_note[i].colour[0] = 0xff;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xa0;
+                    board_buttons_note[i].colour[0] = 0x01;
+                    board_buttons_note[i].colour[1] = 0x00;
+                    board_buttons_note[i].colour[2] = 0x00;
                 }
                 else if (board_buttons_note[i].midi == j*12+3)   // D#   (Minor 3rd)
                 {
-                    board_buttons_note[i].colour[0] = 0xa0;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xff;
+                    board_buttons_note[i].colour[0] = 0x00;
+                    board_buttons_note[i].colour[1] = 0x02;
+                    board_buttons_note[i].colour[2] = 0x05;
                 }
                 else if (board_buttons_note[i].midi == j*12+4)   // E    (Major 3rd)
                 {
-                    board_buttons_note[i].colour[0] = 0xff;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xa0;
+                    board_buttons_note[i].colour[0] = 0x05;
+                    board_buttons_note[i].colour[1] = 0x02;
+                    board_buttons_note[i].colour[2] = 0x00;
                 }
                 else if (board_buttons_note[i].midi == j*12+5)   // F    (Perfect 4th)
                 {
-                    board_buttons_note[i].colour[0] = 0x90;
-                    board_buttons_note[i].colour[1] = 0xff;
-                    board_buttons_note[i].colour[2] = 0x90;
+                    board_buttons_note[i].colour[0] = 0x00;
+                    board_buttons_note[i].colour[1] = 0x10;
+                    board_buttons_note[i].colour[2] = 0x00;
                 }
                 else if (board_buttons_note[i].midi == j*12+6)   // F#   (Diminished 5th)
                 {
-                    board_buttons_note[i].colour[0] = 0xff;
-                    board_buttons_note[i].colour[1] = 0x50;
-                    board_buttons_note[i].colour[2] = 0xff;
+                    board_buttons_note[i].colour[0] = 0x05;
+                    board_buttons_note[i].colour[1] = 0x00;
+                    board_buttons_note[i].colour[2] = 0x05;
                 }
                 else if (board_buttons_note[i].midi == j*12+7)   // G    (Perfect 5th)
                 {
-                    board_buttons_note[i].colour[0] = 0x50;
-                    board_buttons_note[i].colour[1] = 0xff;
-                    board_buttons_note[i].colour[2] = 0x50;
+                    board_buttons_note[i].colour[0] = 0x05;
+                    board_buttons_note[i].colour[1] = 0x10;
+                    board_buttons_note[i].colour[2] = 0x05;
                 }
                 else if (board_buttons_note[i].midi == j*12+8)   // G#   (Minor 6th)
                 {
-                    board_buttons_note[i].colour[0] = 0xa0;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xff;
+                    board_buttons_note[i].colour[0] = 0x00;
+                    board_buttons_note[i].colour[1] = 0x00;
+                    board_buttons_note[i].colour[2] = 0x01;
                 }
                 else if (board_buttons_note[i].midi == j*12+9)   // A    (Major 6th)
                 {
-                    board_buttons_note[i].colour[0] = 0xff;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xa0;
+                    board_buttons_note[i].colour[0] = 0x01;
+                    board_buttons_note[i].colour[1] = 0x00;
+                    board_buttons_note[i].colour[2] = 0x00;
                 }
                 else if (board_buttons_note[i].midi == j*12+10)   // A#   (Minor 7th)
                 {
-                    board_buttons_note[i].colour[0] = 0xa0;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xff;
+                    board_buttons_note[i].colour[0] = 0x00;
+                    board_buttons_note[i].colour[1] = 0x02;
+                    board_buttons_note[i].colour[2] = 0x05;
                 }
                 else if (board_buttons_note[i].midi == j*12+11)   // B    (Major 7th)
                 {
-                    board_buttons_note[i].colour[0] = 0xff;
-                    board_buttons_note[i].colour[1] = 0xa0;
-                    board_buttons_note[i].colour[2] = 0xa0;
+                    board_buttons_note[i].colour[0] = 0x05;
+                    board_buttons_note[i].colour[1] = 0x02;
+                    board_buttons_note[i].colour[2] = 0x00;
                 }
             }
         }
@@ -544,4 +551,15 @@ void buttons_init() {
 
 
 
+}
+
+void update_ccs(button_setup src[])
+{
+    for (int i = 0; i < board_buttons_note_size; i++)
+    {
+        if (board_buttons_note[i].type == 1)
+        {
+            board_buttons_note[i].midi = src[i].value;
+        }
+    }
 }
