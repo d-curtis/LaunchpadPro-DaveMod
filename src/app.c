@@ -37,6 +37,8 @@
 
 #include "app.h"
 #include "view_setup_cc.h"
+#include "view_setup_device.h"
+#include "velocity.h"
 
 // store ADC frame pointer
 static const u16 *g_ADC = 0;
@@ -95,7 +97,11 @@ _Bool glob_setupHeld = false;
 
 //      --              --              --              --              --
 
-
+void send_note_transform(u8 port, u8 status, u8 d1, u8 d2)
+{
+    hal_send_midi(port, status, d1, lut_vel3_hi[d2]);
+    hal_send_midi(port, NOTEOFF, 1, d2);
+}
 
 
 //______________________________________________________________________________
@@ -122,6 +128,7 @@ void app_surface_event(u8 type, u8 index, u8 value)
             {   
                 glob_setupHeld = true;
                 board_buttons_global[1].active = 1;
+                board_buttons_global[2].active = 1;
                 board_buttons_global[3].active = 1;
 
 
@@ -130,6 +137,7 @@ void app_surface_event(u8 type, u8 index, u8 value)
             {
                 glob_setupHeld = false;
                 board_buttons_global[1].active = 0;
+                board_buttons_global[2].active = 0;
                 board_buttons_global[3].active = 0;
             }
             
@@ -152,6 +160,10 @@ void app_surface_event(u8 type, u8 index, u8 value)
                                 currentview = VIEWNOTE;
                             }
                             break;
+
+                            case 97:
+                                drawBlank();
+                                currentview = VIEWSETUPDEVICE;
 
                             case 98:
                             {
@@ -182,7 +194,7 @@ void app_surface_event(u8 type, u8 index, u8 value)
                         if (value)
                         {
                             // Send the MIDI data
-                            hal_send_midi(  USBMIDI, NOTEON,
+                            send_note_transform(  USBMIDI, NOTEON,
                                             board_buttons_note[index].midi + (trans_octave * 12) + trans_semi,
                                             value   );
                             // Set the pressed LED
@@ -361,6 +373,12 @@ void redrawView()
         case VIEWSETUPUSER:
         {
             setup_cc_redrawBoard();
+        }
+        break;
+
+        case VIEWSETUPDEVICE:
+        {
+            // view_setup_device_redrawBoard();
         }
         break;
 

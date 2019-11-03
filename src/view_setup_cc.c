@@ -262,7 +262,6 @@ Equivalent of app_surface_event - specific to view_setup_cc
     {
         if (value)
         {
-            // hal_send_midi(USBMIDI, NOTEON, index, value);
             for (int i = 0; i < BUTTON_COUNT; i++)
             {
                 // CC Buttons
